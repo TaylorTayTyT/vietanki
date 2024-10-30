@@ -5,11 +5,13 @@ from aqt.utils import showInfo, qconnect
 # import all of the Qt GUI library
 from aqt.qt import *
 from aqt import gui_hooks
+from anki import hooks
 from anki.stdmodels import models
 from anki import collection as col
 from . import basic
 import os
-
+from aqt.utils import showInfo
+#from keyboard import _keyboard_event
 
 # We're going to add a menu item below. First we want to create a function to
 # be called when the menu item is activated.
@@ -18,8 +20,13 @@ note_type_name = "Sample"
 
 def add_models():
     models.append(('Viet (test)', basic.add_model))
+    
+def tab_press() -> None:
+    if(keyboard.is_pressed('tab')):
+        print("tab")
 
 def start() -> None:
+    
     """
     Show a message box with the number of cards in the current collection.
 
@@ -120,21 +127,26 @@ def start() -> None:
     print(template)
     print(new_model)
     
-    
-    
-    
-    """
-    new_note["Text"] = 'foo'
-    new_note["Back Extra"] = 'bar'
-    did = mw.col.decks.id("TST")
-    mw.col.addNote(new_note, did)
-    """
-# create a new menu item, "test"
-action = QAction("test", mw)
 # set it to call testFunction when it's clicked
-qconnect(action.triggered, start)
-# and add it to the tools menu
-mw.form.menuTools.addAction(action)
+gui_hooks.profile_did_open.append(start)
 
+def event(event):
+    if event.type() == QEvent.KeyPress:
+        ke = QKeyEvent(event)
+        if ke.key() == Qt.Key_Tab:
+            # special tab handling here
+            return True
+    return QWidget.event(event)
 
+# Define your custom function that will run when the hook is triggered
+def on_add_cards_init(addcard):
+    # Add your custom behavior here
+    showInfo("Add your custom behavior here")
+    print(addcard.form.horizontalLayout.addWidget(QPushButton("Custom Button")))
+    # You can access the addcards object here to modify the dialog
+    
+    
 
+# Append your function to the "add_cards_did_init" hook
+#hooks.addHook("add_cards_did_init", on_add_cards_init)
+gui_hooks.add_cards_did_init.append(on_add_cards_init)
