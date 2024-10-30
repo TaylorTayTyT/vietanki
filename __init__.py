@@ -142,7 +142,11 @@ def event(event):
 def on_add_cards_init(addcard):
     # Add your custom behavior here
     showInfo("Add your custom behavior here")
-    print(addcard.form.horizontalLayout.addWidget(QPushButton("Custom Button")))
+    
+    label = QLabel("hello")
+    addcard.form.horizontalLayout.addWidget(label)
+    print(addcard.form.setupUi)
+    print(dir(addcard.form))
     # You can access the addcards object here to modify the dialog
     
     
