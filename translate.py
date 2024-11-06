@@ -1,12 +1,12 @@
 import asyncio
-import aiohttp
 import os
-from dotenv import load_dotenv
 from decode_audio import decode_tts_output
 import json
-
-# Load environment variables from .env file
-load_dotenv()
+import sys
+sys.path.append(os.path.join(os.getenv('APPDATA'), 'Anki2', 'addons21', 'viet_dict'))
+import aiohttp
+import dotenv
+dotenv.load_dotenv()
 
 async def translate_text(input):
     url = "https://translation.googleapis.com/language/translate/v2?key=" + os.getenv("API")
@@ -33,9 +33,11 @@ async def translate_text(input):
             if response.status == 200:
                 result = await response.json()
                 print(result)
+                return result
             else:
                 print(f"Error: {response.status}")
                 print(await response.text())
+                return None
 
 async def tts(input):
     api_key = os.getenv("API")
@@ -59,14 +61,14 @@ async def tts(input):
         async with session.post(url, json=query, headers=headers) as response:
             if response.status == 200:
                 result = await response.json()
-                with open("output.txt", "w") as f:
+                with open(f"audio/{input}.txt", "w") as f:
                     f.write(json.dumps(result))
-                    decode_tts_output("output.txt", "output-audio.mp3")
+                    decode_tts_output(f"audio/{input}.txt", f"audio/{input}.mp3")
                 
             else:
                 print(f"Error: {response.status}")
                 print(await response.text())
 
 # Run the async function
-#asyncio.run(translate_text("chao"))
+#asyncio.run(translate_text("chưa"))
 asyncio.run(tts("chao"))
