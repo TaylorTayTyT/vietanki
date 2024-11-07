@@ -68,16 +68,23 @@ def on_add_cards_init(addcard):
     def eventFilter(self, source, event):
         #print(event.type())
         if event.type() == QEvent.Type.KeyRelease and event.key() == Qt.Key.Key_Tab:
+            
+            #go to media directory
+            head, _ = os.path.split(os.getcwd())
+            parent_dir, _ = os.path.split(head)
+            media = os.path.join(parent_dir, os.getenv("USER"), "collection.media")
             viet = get_field_values()['Viet']
             if viet:
-                #asyncio.run(translate_text(viet))
                 note = addcard.editor.note
                 english = asyncio.run(translate_text(viet))
                 english = english["data"]["translations"]
                 print(english)
                 english = [translation["translatedText"] for translation in english]
                 note.fields[1] = '\n'.join(english)
-                audio_file = os.path.join(mw.col.media.dir(), f"{viet}.mp3")
+                
+                #assign the audio
+                audio_file = f"{viet}.mp3"
+                audio_path = os.path.join(media, audio_file)
                 note.fields[3] = f'{{{{audio:{audio_file}}}}}'
                 addcard.editor.loadNote()
             showInfo("Tab was pressed")
@@ -87,4 +94,5 @@ def on_add_cards_init(addcard):
     addcard.form.centralwidget.installEventFilter(addcard)
     addcard.eventFilter = eventFilter.__get__(addcard)
 
+print(media)
 gui_hooks.add_cards_did_init.append(on_add_cards_init)

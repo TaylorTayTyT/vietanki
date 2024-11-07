@@ -14,9 +14,9 @@ async def translate_text(input):
     
     # Fetch API key from environment variables
     api_key = os.getenv("API")
-    print(api_key)
+    #print(api_key)
     if not api_key:
-        print("API key not found")
+        #print("API key not found")
         return
 
     query = {
@@ -32,7 +32,7 @@ async def translate_text(input):
         async with session.post(url, json=query, headers=headers) as response:
             if response.status == 200:
                 result = await response.json()
-                print(result)
+                #print(result)
                 return result
             else:
                 print(f"Error: {response.status}")
@@ -64,11 +64,10 @@ async def tts(input):
                 with open(f"audio/{input}.txt", "w") as f:
                     f.write(json.dumps(result))
                     decode_tts_output(f"audio/{input}.txt", f"audio/{input}.mp3")
-                
             else:
                 print(f"Error: {response.status}")
                 print(await response.text())
 
 # Run the async function
-#asyncio.run(translate_text("chưa"))
-asyncio.run(tts("chao"))
+asyncio.run(translate_text("chưa"))
+#asyncio.run(tts("chao"))
