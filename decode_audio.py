@@ -16,13 +16,18 @@ def decode_tts_output(input_file, output_file):
     output_file: the name of the audio file to create
 
     """
-
-    with open(input_file) as input:
+    print(input_file)
+    print(output_file)
+    with open(input_file, "r", encoding="utf-8") as input:
+        print(input)
+        for line in input:
+            print(line)
+        """
         response = json.load(input)
         audio_data = response['audioContent']
-
         with open(output_file, "wb") as new_file:
             new_file.write(decodebytes(audio_data.encode('utf-8')))
+            """
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(

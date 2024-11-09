@@ -6,6 +6,7 @@ import sys
 sys.path.append(os.path.join(os.getenv('APPDATA'), 'Anki2', 'addons21', 'viet_dict'))
 import aiohttp
 import dotenv
+from base64 import decodebytes
 dotenv.load_dotenv()
 
 async def translate_text(input):
@@ -61,13 +62,15 @@ async def tts(input):
         async with session.post(url, json=query, headers=headers) as response:
             if response.status == 200:
                 result = await response.json()
-                with open(f"audio/{input}.txt", "w") as f:
-                    f.write(json.dumps(result))
-                    decode_tts_output(f"audio/{input}.txt", f"audio/{input}.mp3")
+                result = result["audioContent"]
+                input_file_txt = os.path.join(os.getcwd(), "audio", f"{input}.txt")
+                output_file_mp3 = os.path.join(os.getcwd(), "audio", f"{input}.mp3")
+                with open(output_file_mp3, "wb") as new_file:
+                    new_file.write(decodebytes(result.encode('utf-8')))
             else:
                 print(f"Error: {response.status}")
                 print(await response.text())
 
 # Run the async function
-asyncio.run(translate_text("chưa"))
+#asyncio.run(translate_text("chưa"))
 #asyncio.run(tts("chao"))

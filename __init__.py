@@ -12,10 +12,11 @@ sys.path.append(os.path.join(os.getenv('APPDATA'), 'Anki2', 'addons21', 'viet_di
 import dotenv
 import aiohttp
 dotenv.load_dotenv()
-from translate import translate_text
+from translate import translate_text, tts
 
 note_type_name = "Sample"
 print(os.path.abspath(os.getcwd()))
+
 
 def start() -> None:
     if mw.col.models.by_name(note_type_name):
@@ -65,6 +66,11 @@ def on_add_cards_init(addcard):
     retrieve_button.clicked.connect(get_field_values)
     addcard.form.verticalLayout_3.addWidget(retrieve_button)
     
+    def find(name, path):
+        for root, dirs, files in os.walk(path):
+            if name in files:
+                return os.path.join(root, name)
+    
     def eventFilter(self, source, event):
         #print(event.type())
         if event.type() == QEvent.Type.KeyRelease and event.key() == Qt.Key.Key_Tab:
@@ -73,26 +79,36 @@ def on_add_cards_init(addcard):
             head, _ = os.path.split(os.getcwd())
             parent_dir, _ = os.path.split(head)
             media = os.path.join(parent_dir, os.getenv("USER"), "collection.media")
-            viet = get_field_values()['Viet']
+            viet = None
+            if("Viet" in get_field_values()):
+                viet = get_field_values()['Viet']
             if viet:
                 note = addcard.editor.note
                 english = asyncio.run(translate_text(viet))
                 english = english["data"]["translations"]
-                print(english)
                 english = [translation["translatedText"] for translation in english]
                 note.fields[1] = '\n'.join(english)
                 
                 #assign the audio
                 audio_file = f"{viet}.mp3"
                 audio_path = os.path.join(media, audio_file)
-                note.fields[3] = f'{{{{audio:{audio_file}}}}}'
+                
+                note.fields[3] = f'[sound:{audio_file}]'
+                try:
+                    asyncio.run(tts(viet))
+                except Exception as e:
+                    print(e)
+                    
+                local_audio_path = os.path.join(parent_dir, "addons21", "viet_dict", "audio", audio_file)
+                media_output_file = os.path.join(media, audio_file)
+                print(local_audio_path, media_output_file)
+                os.rename(local_audio_path, media_output_file)
                 addcard.editor.loadNote()
+            
             showInfo("Tab was pressed")
             return True  # Mark event as handled
         return False  # Pass event to other handlers
     
     addcard.form.centralwidget.installEventFilter(addcard)
     addcard.eventFilter = eventFilter.__get__(addcard)
-
-print(media)
 gui_hooks.add_cards_did_init.append(on_add_cards_init)
