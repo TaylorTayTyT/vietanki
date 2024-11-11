@@ -33,7 +33,7 @@ async def translate_text(input):
         async with session.post(url, json=query, headers=headers) as response:
             if response.status == 200:
                 result = await response.json()
-                #print(result)
+                print(result)
                 return result
             else:
                 print(f"Error: {response.status}")

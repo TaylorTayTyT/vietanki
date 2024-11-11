@@ -1,4 +1,6 @@
+# -*- coding: utf-8 -*-
 from aqt import mw, gui_hooks
+from aqt.operations import QueryOp
 from aqt.qt import *
 from aqt.utils import showInfo
 import os
@@ -65,47 +67,65 @@ def on_add_cards_init(addcard):
     retrieve_button = QPushButton("Get Field Values")
     retrieve_button.clicked.connect(get_field_values)
     addcard.form.verticalLayout_3.addWidget(retrieve_button)
-    
-    def find(name, path):
-        for root, dirs, files in os.walk(path):
-            if name in files:
-                return os.path.join(root, name)
+        
     
     def eventFilter(self, source, event):
-        #print(event.type())
         if event.type() == QEvent.Type.KeyRelease and event.key() == Qt.Key.Key_Tab:
             
             #go to media directory
             head, _ = os.path.split(os.getcwd())
             parent_dir, _ = os.path.split(head)
-            media = os.path.join(parent_dir, os.getenv("USER"), "collection.media")
             viet = None
             if("Viet" in get_field_values()):
                 viet = get_field_values()['Viet']
+                showInfo(viet)
             if viet:
-                note = addcard.editor.note
-                english = asyncio.run(translate_text(viet))
-                english = english["data"]["translations"]
-                english = [translation["translatedText"] for translation in english]
-                note.fields[1] = '\n'.join(english)
-                
-                #assign the audio
-                audio_file = f"{viet}.mp3"
-                audio_path = os.path.join(media, audio_file)
-                
-                note.fields[3] = f'[sound:{audio_file}]'
-                try:
-                    asyncio.run(tts(viet))
-                except Exception as e:
-                    print(e)
+                print(f"{viet} in if")
+                loop = asyncio.get_event_loop()
+                async def fill_fields(viet, addcard):
                     
-                local_audio_path = os.path.join(parent_dir, "addons21", "viet_dict", "audio", audio_file)
-                media_output_file = os.path.join(media, audio_file)
-                print(local_audio_path, media_output_file)
-                os.rename(local_audio_path, media_output_file)
-                addcard.editor.loadNote()
-            
-            showInfo("Tab was pressed")
+                    
+                    print("fill fields")
+                    print(viet)
+                    head, _ = os.path.split(os.getcwd())
+                    parent_dir, _ = os.path.split(head)
+                    media = os.path.join(parent_dir, os.getenv("USER"), "collection.media")
+                    viet = viet.strip()
+
+                    note = addcard.editor.note
+                    english = await translate_text(viet)
+                    english = english["data"]["translations"]
+                    english = [translation["translatedText"] for translation in english]
+                    note.fields[1] = '\n'.join(english)
+                    
+                    audio_file = f"{viet}.mp3"
+                    audio_path = os.path.join(media, audio_file)
+                    local_audio_path = os.path.join(parent_dir, "addons21", "viet_dict", "audio", audio_file)
+                    media_output_file = os.path.join(media, audio_file)
+                    print(local_audio_path, media_output_file)
+                    try:
+                        os.rename(local_audio_path, media_output_file)
+                    except FileExistsError:
+                        print("File already exists")
+                    except Exception as e:
+                        print(e)
+                    note.fields[3] = f'[sound:{audio_file}]'
+                    try:
+                        await tts(viet)
+                    except Exception as e:
+                        print(e)
+                        return
+                
+                def success(addcard):
+                    addcard.editor.loadNote()
+                    print("success")
+                    return True
+                op = QueryOp(
+                    parent=mw,
+                    op=lambda mw: loop.run_until_complete(fill_fields(viet, addcard)),
+                    success=lambda mw: success(addcard),
+                )
+                op.with_progress().run_in_background()
             return True  # Mark event as handled
         return False  # Pass event to other handlers
     
