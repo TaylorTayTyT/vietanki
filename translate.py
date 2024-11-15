@@ -9,7 +9,23 @@ import dotenv
 from base64 import decodebytes
 dotenv.load_dotenv()
 
+def find_translation(file_path, viet_word):
+    with open(file_path, 'r', encoding='utf-8', errors="ignore") as file:
+        for line in file:
+            try:
+                word, translation = line.strip().split(',', 1)
+                if word == viet_word:
+                    return translation
+            except Exception as e:
+                pass
+    return None
+
 async def translate_text(input):
+    
+    find_trans = find_translation("translations.txt", input)
+    if(find_trans):
+        print("translation in file already")
+        return {"data": {"translations": [{"translatedText": find_trans}]}}
     url = "https://translation.googleapis.com/language/translate/v2?key=" + os.getenv("API")
     headers = {"Content-Type": "application/json"}
     
@@ -33,6 +49,11 @@ async def translate_text(input):
         async with session.post(url, json=query, headers=headers) as response:
             if response.status == 200:
                 result = await response.json()
+                english = result["data"]["translations"]
+                english = [translation["translatedText"] for translation in english]
+                english = ", ".join(english)
+                with open("translations.txt", "a") as file:
+                    file.write(f"{input}, {english}\n")
                 print(result)
                 return result
             else:
